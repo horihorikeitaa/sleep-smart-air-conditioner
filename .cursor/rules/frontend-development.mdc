@@ -1,0 +1,66 @@
+---
+description: frontend開発のガイドライン
+globs: packages/frontend/
+alwaysApply: false
+---
+# フロントエンド開発ガイドライン
+
+## React コンポーネント設計
+- **関数型コンポーネント**: 基本的にfunction宣言を使用
+- **Props型定義**: インターフェースで明確に定義
+- **単一責任原則**: 1つのコンポーネントは1つの責務
+- **再利用性**: 汎用的なコンポーネントは共通化
+
+## TypeScript型安全性
+- `any`型の使用を避ける
+- 厳密な型定義を実装
+- ユーティリティ型を積極活用
+- Zodを使用したランタイム型チェック
+
+```typescript
+// コンポーネント例
+interface SensorDataCardProps {
+  readonly data: SensorData;
+  readonly onRefresh?: () => void;
+}
+
+export function SensorDataCard({ data, onRefresh }: SensorDataCardProps) {
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      {/* コンポーネント実装 */}
+    </div>
+  );
+}
+```
+
+## 状態管理
+- **useState**: ローカル状態
+- **Zustand**: グローバル状態（軽量）
+- **React Query**: サーバー状態管理
+- **Context**: テーマ・設定等の共有状態
+
+## スタイリング
+- **Tailwind CSS**: ユーティリティファーストCSS
+- **レスポンシブデザイン**: モバイルファースト
+- **ダークモード**: システム設定に対応
+- **アクセシビリティ**: ARIA属性の適切な使用
+
+## パフォーマンス最適化
+- **React.memo**: 不要な再レンダリング防止
+- **useMemo/useCallback**: 重い計算のメモ化
+- **動的インポート**: コード分割
+- **Image最適化**: Next.js Imageコンポーネント
+
+## API通信
+- **fetch API**: 基本的なHTTP通信
+- **React Query**: キャッシュ・リトライ機能
+- **エラーハンドリング**: ユーザーフレンドリーなエラー表示
+- **ローディング状態**: 適切なローディングUI
+
+## テスト戦略
+- **React Testing Library**: コンポーネントテスト
+- **Jest**: ユニットテスト
+- **MSW**: API モッキング
+- **E2E**: Playwright（将来的に実装）
+
+対象ディレクトリ: `packages/frontend/`

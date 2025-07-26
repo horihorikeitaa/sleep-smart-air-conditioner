@@ -1,0 +1,139 @@
+---
+description: 機械学習開発のガイドライン
+globs: packages/ml/
+alwaysApply: false
+---
+# 機械学習開発ガイドライン
+
+## データ処理原則
+- **データ品質**: 欠損値・異常値の適切な処理
+- **前処理パイプライン**: 再現可能な前処理手順
+- **特徴量エンジニアリング**: ドメイン知識を活用
+- **データリーケージ**: 未来情報の混入防止
+
+## モデル開発プロセス
+```python
+# 基本的なモデル開発フロー
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import mean_squared_error, r2_score
+
+# 1. データ読み込み・探索
+def load_and_explore_data(file_path: str) -> pd.DataFrame:
+    data = pd.read_csv(file_path)
+    # データ探索・可視化
+    return data
+
+# 2. 前処理
+def preprocess_data(data: pd.DataFrame) -> tuple:
+    # 特徴量エンジニアリング
+    # 正規化・標準化
+    return X, y
+
+# 3. モデル学習・評価
+def train_and_evaluate_model(X, y):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    # モデル学習
+    # クロスバリデーション
+    return model, scores
+```
+
+## モデル評価
+- **時系列データ**: Time Series Split使用
+- **クロスバリデーション**: 適切な分割戦略
+- **評価指標**: MAE, RMSE, R²など複数指標
+- **過学習検証**: 学習曲線・検証曲線の確認
+
+## 実験管理
+- **MLflow**: 実験トラッキング
+- **バージョン管理**: データ・モデルの版管理
+- **再現性**: シード値固定・環境記録
+- **ドキュメント**: 実験設計・結果の記録
+
+## 特徴量設計
+- **時系列特徴量**: ラグ・移動平均・季節性
+- **環境データ**: 温度・湿度・照度の相関分析
+- **睡眠データ**: 睡眠の質との関係性分析
+- **外部データ**: 天気・季節などの外部要因
+
+## モデル運用
+- **推論最適化**: 軽量化・高速化
+- **モニタリング**: ドリフト検出
+- **自動再学習**: 定期的なモデル更新
+- **A/Bテスト**: モデル性能比較
+
+## AWS SageMaker活用
+- **SageMaker Studio Lab**: 開発環境
+- **SageMaker Training**: 大規模学習
+- **SageMaker Endpoints**: 推論API
+- **SageMaker Pipeline**: MLOpsパイプライン
+
+対象ディレクトリ: `packages/ml/`
+# 機械学習開発ガイドライン
+
+## データ処理原則
+- **データ品質**: 欠損値・異常値の適切な処理
+- **前処理パイプライン**: 再現可能な前処理手順
+- **特徴量エンジニアリング**: ドメイン知識を活用
+- **データリーケージ**: 未来情報の混入防止
+
+## モデル開発プロセス
+```python
+# 基本的なモデル開発フロー
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.metrics import mean_squared_error, r2_score
+
+# 1. データ読み込み・探索
+def load_and_explore_data(file_path: str) -> pd.DataFrame:
+    data = pd.read_csv(file_path)
+    # データ探索・可視化
+    return data
+
+# 2. 前処理
+def preprocess_data(data: pd.DataFrame) -> tuple:
+    # 特徴量エンジニアリング
+    # 正規化・標準化
+    return X, y
+
+# 3. モデル学習・評価
+def train_and_evaluate_model(X, y):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+    # モデル学習
+    # クロスバリデーション
+    return model, scores
+```
+
+## モデル評価
+- **時系列データ**: Time Series Split使用
+- **クロスバリデーション**: 適切な分割戦略
+- **評価指標**: MAE, RMSE, R²など複数指標
+- **過学習検証**: 学習曲線・検証曲線の確認
+
+## 実験管理
+- **MLflow**: 実験トラッキング
+- **バージョン管理**: データ・モデルの版管理
+- **再現性**: シード値固定・環境記録
+- **ドキュメント**: 実験設計・結果の記録
+
+## 特徴量設計
+- **時系列特徴量**: ラグ・移動平均・季節性
+- **環境データ**: 温度・湿度・照度の相関分析
+- **睡眠データ**: 睡眠の質との関係性分析
+- **外部データ**: 天気・季節などの外部要因
+
+## モデル運用
+- **推論最適化**: 軽量化・高速化
+- **モニタリング**: ドリフト検出
+- **自動再学習**: 定期的なモデル更新
+- **A/Bテスト**: モデル性能比較
+
+## AWS SageMaker活用
+- **SageMaker Studio Lab**: 開発環境
+- **SageMaker Training**: 大規模学習
+- **SageMaker Endpoints**: 推論API
+- **SageMaker Pipeline**: MLOpsパイプライン
+
+対象ディレクトリ: `packages/ml/`

@@ -1,0 +1,119 @@
+---
+description: backend開発のガイドライン
+globs: packages/backend/,packages/infra/
+alwaysApply: false
+---
+# バックエンド開発ガイドライン
+
+## Lambda関数設計原則
+- **単一責任原則**: 1つの関数は1つの責務のみ
+- **関数サイズ**: 小さく保つ（< 50MB）
+- **実行時間**: 15分以内で完了
+- **メモリ効率**: 適切なメモリ設定
+
+## TypeScript実装パターン
+```typescript
+// Lambda関数テンプレート
+export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    // ビジネスロジック
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify(response),
+    };
+  } catch (error) {
+    console.error('Error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Internal Server Error' }),
+    };
+  }
+};
+```
+
+## DynamoDB設計原則
+- アクセスパターンを事前設計
+- パーティションキーの分散を考慮
+- GSI（Global Secondary Index）を適切に活用
+- 単一テーブル設計を基本とする
+
+## エラーハンドリング
+- 適切なログレベル設定
+- 構造化ログの使用
+- リトライ戦略の実装
+- デッドレターキューの設定
+
+## セキュリティ
+- IAM最小権限の原則
+- 環境変数での機密情報管理
+- VPC設定（必要に応じて）
+- CORS設定の適切な実装
+
+## パフォーマンス最適化
+- Cold Start対策
+- 接続プールの活用
+- 適切なタイムアウト設定
+- CloudWatch メトリクス監視
+
+対象ディレクトリ: `packages/backend/`, `packages/infra/`
+# バックエンド開発ガイドライン
+
+## Lambda関数設計原則
+- **単一責任原則**: 1つの関数は1つの責務のみ
+- **関数サイズ**: 小さく保つ（< 50MB）
+- **実行時間**: 15分以内で完了
+- **メモリ効率**: 適切なメモリ設定
+
+## TypeScript実装パターン
+```typescript
+// Lambda関数テンプレート
+export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
+  try {
+    // ビジネスロジック
+    return {
+      statusCode: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+      body: JSON.stringify(response),
+    };
+  } catch (error) {
+    console.error('Error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Internal Server Error' }),
+    };
+  }
+};
+```
+
+## DynamoDB設計原則
+- アクセスパターンを事前設計
+- パーティションキーの分散を考慮
+- GSI（Global Secondary Index）を適切に活用
+- 単一テーブル設計を基本とする
+
+## エラーハンドリング
+- 適切なログレベル設定
+- 構造化ログの使用
+- リトライ戦略の実装
+- デッドレターキューの設定
+
+## セキュリティ
+- IAM最小権限の原則
+- 環境変数での機密情報管理
+- VPC設定（必要に応じて）
+- CORS設定の適切な実装
+
+## パフォーマンス最適化
+- Cold Start対策
+- 接続プールの活用
+- 適切なタイムアウト設定
+- CloudWatch メトリクス監視
+
+対象ディレクトリ: `packages/backend/`, `packages/infra/`

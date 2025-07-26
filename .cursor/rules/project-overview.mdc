@@ -1,0 +1,61 @@
+---
+alwaysApply: true
+---
+# Sleep Smart Air Conditioner プロジェクト概要
+
+## プロジェクト概要
+IoT×AI×クラウドを活用したスマートエアコン制御システム。SwitchBot APIとAWS サーバーレスアーキテクチャを使用して、機械学習による最適な睡眠環境制御を実現。
+
+## 技術スタック
+- **クラウド**: AWS サーバーレス (Lambda, API Gateway, DynamoDB, S3)
+- **フロントエンド**: Next.js, TypeScript, Tailwind CSS
+- **バックエンド**: Node.js (TypeScript), Python (ML)
+- **IoT**: SwitchBot Hub 2, SwitchBot Plug Mini
+- **IaC**: AWS CDK
+- **CI/CD**: GitHub Actions
+
+## 開発方針
+- 個人開発から将来的なチーム開発への拡張を考慮
+- MVPから段階的な機能拡張
+- テスト駆動開発とコード品質重視
+- ドキュメント重視の開発
+- ベストプラクティスの遵守
+
+## フェーズ構成
+- **フェーズ0**: 基盤構築とデータ収集・可視化基盤
+- **フェーズ1**: 機械学習モデルによるエアコン自動制御
+- **フェーズ2**: UIの改善と高度な機能拡張
+
+詳細は以下のドキュメントを参照：
+- `docs/requirements.md` - 要件定義
+- `docs/architecture.md` - アーキテクチャ設計
+- `docs/roadmap.md` - 開発ロードマップ
+# Sleep Smart Air Conditioner プロジェクト概要
+
+## プロジェクト概要
+IoT×AI×クラウドを活用したスマートエアコン制御システム。SwitchBot APIとAWS サーバーレスアーキテクチャを使用して、機械学習による最適な睡眠環境制御を実現。
+
+## 技術スタック
+- **クラウド**: AWS サーバーレス (Lambda, API Gateway, DynamoDB, S3)
+- **フロントエンド**: Next.js, TypeScript, Tailwind CSS
+- **バックエンド**: Node.js (TypeScript), Python (ML)
+- **IoT**: SwitchBot Hub 2, SwitchBot Plug Mini
+- **IaC**: AWS CDK
+- **CI/CD**: GitHub Actions
+
+## 開発方針
+- 個人開発から将来的なチーム開発への拡張を考慮
+- MVPから段階的な機能拡張
+- テスト駆動開発とコード品質重視
+- ドキュメント重視の開発
+- ベストプラクティスの遵守
+
+## フェーズ構成
+- **フェーズ0**: 基盤構築とデータ収集・可視化基盤
+- **フェーズ1**: 機械学習モデルによるエアコン自動制御
+- **フェーズ2**: UIの改善と高度な機能拡張
+
+詳細は以下のドキュメントを参照：
+- `docs/requirements.md` - 要件定義
+- `docs/architecture.md` - アーキテクチャ設計
+- `docs/roadmap.md` - 開発ロードマップ

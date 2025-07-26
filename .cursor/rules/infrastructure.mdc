@@ -1,0 +1,205 @@
+---
+description: インフラ・DevOpsガイドライン
+globs: packages/infra/,github/workflows/
+alwaysApply: false
+---
+# インフラ・DevOps ガイドライン
+
+## AWS CDK 設計原則
+- **Infrastructure as Code**: 全リソースをコード管理
+- **環境分離**: dev/staging/prodの明確な分離
+- **最小権限**: IAMロールは必要最小限の権限
+- **タグ付け**: 一貫したタグ戦略
+
+## CDK Stack 構成
+```typescript
+// Stack設計例
+export class SleepSmartACStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+    
+    // DynamoDB
+    const dataTable = new Table(this, 'SensorDataTable', {
+      tableName: `${props?.environment}-sensor-data`,
+      partitionKey: { name: 'deviceId', type: AttributeType.STRING },
+      sortKey: { name: 'timestamp', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+
+    // Lambda
+    const dataCollector = new Function(this, 'DataCollectorFunction', {
+      runtime: Runtime.NODEJS_18_X,
+      handler: 'index.handler',
+      code: Code.fromAsset('dist/lambda'),
+      environment: {
+        TABLE_NAME: dataTable.tableName,
+      },
+    });
+  }
+}
+```
+
+## セキュリティベストプラクティス
+- **IAM最小権限**: 必要な権限のみ付与
+- **VPC**: 必要に応じてプライベートサブネット使用
+- **暗号化**: データの暗号化（at rest/in transit）
+- **シークレット管理**: AWS Secrets Manager使用
+
+## CI/CD パイプライン
+### GitHub Actions ワークフロー
+```yaml
+name: Deploy Production
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - run: npm ci
+      - run: npm run test
+      - run: npm run build
+      
+      - name: CDK Deploy
+        run: |
+          cd infra
+          npm ci
+          npx cdk deploy --require-approval never
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+```
+
+## 環境管理
+- **環境分離**: dev/staging/prodで独立したリソース
+- **設定管理**: 環境変数・SSMパラメータ使用
+- **シークレット**: GitHub Secrets・AWS Secrets Manager
+- **コスト管理**: 適切なタグ付けと予算アラート
+
+## モニタリング・ロギング
+- **CloudWatch**: メトリクス・ログ・アラーム
+- **X-Ray**: 分散トレーシング
+- **ログ集約**: 構造化ログ使用
+- **アラート**: 重要メトリクスの監視
+
+## コスト最適化
+- **リソースサイジング**: 適切なLambdaメモリ設定
+- **Auto Scaling**: DynamoDBのオンデマンド課金
+- **ライフサイクル**: S3のライフサイクル管理
+- **予算管理**: 月額予算アラート設定
+
+## 災害復旧
+- **バックアップ**: DynamoDBポイントインタイムリカバリ
+- **マルチリージョン**: 将来的な検討事項
+- **ロールバック**: CDKによるインフラロールバック
+- **手順書**: 障害対応手順の文書化
+
+対象ディレクトリ: `packages/infra/`, `.github/workflows/`
+# インフラ・DevOps ガイドライン
+
+## AWS CDK 設計原則
+- **Infrastructure as Code**: 全リソースをコード管理
+- **環境分離**: dev/staging/prodの明確な分離
+- **最小権限**: IAMロールは必要最小限の権限
+- **タグ付け**: 一貫したタグ戦略
+
+## CDK Stack 構成
+```typescript
+// Stack設計例
+export class SleepSmartACStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+    
+    // DynamoDB
+    const dataTable = new Table(this, 'SensorDataTable', {
+      tableName: `${props?.environment}-sensor-data`,
+      partitionKey: { name: 'deviceId', type: AttributeType.STRING },
+      sortKey: { name: 'timestamp', type: AttributeType.STRING },
+      billingMode: BillingMode.PAY_PER_REQUEST,
+      removalPolicy: RemovalPolicy.RETAIN,
+    });
+
+    // Lambda
+    const dataCollector = new Function(this, 'DataCollectorFunction', {
+      runtime: Runtime.NODEJS_18_X,
+      handler: 'index.handler',
+      code: Code.fromAsset('dist/lambda'),
+      environment: {
+        TABLE_NAME: dataTable.tableName,
+      },
+    });
+  }
+}
+```
+
+## セキュリティベストプラクティス
+- **IAM最小権限**: 必要な権限のみ付与
+- **VPC**: 必要に応じてプライベートサブネット使用
+- **暗号化**: データの暗号化（at rest/in transit）
+- **シークレット管理**: AWS Secrets Manager使用
+
+## CI/CD パイプライン
+### GitHub Actions ワークフロー
+```yaml
+name: Deploy Production
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - run: npm ci
+      - run: npm run test
+      - run: npm run build
+      
+      - name: CDK Deploy
+        run: |
+          cd infra
+          npm ci
+          npx cdk deploy --require-approval never
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+```
+
+## 環境管理
+- **環境分離**: dev/staging/prodで独立したリソース
+- **設定管理**: 環境変数・SSMパラメータ使用
+- **シークレット**: GitHub Secrets・AWS Secrets Manager
+- **コスト管理**: 適切なタグ付けと予算アラート
+
+## モニタリング・ロギング
+- **CloudWatch**: メトリクス・ログ・アラーム
+- **X-Ray**: 分散トレーシング
+- **ログ集約**: 構造化ログ使用
+- **アラート**: 重要メトリクスの監視
+
+## コスト最適化
+- **リソースサイジング**: 適切なLambdaメモリ設定
+- **Auto Scaling**: DynamoDBのオンデマンド課金
+- **ライフサイクル**: S3のライフサイクル管理
+- **予算管理**: 月額予算アラート設定
+
+## 災害復旧
+- **バックアップ**: DynamoDBポイントインタイムリカバリ
+- **マルチリージョン**: 将来的な検討事項
+- **ロールバック**: CDKによるインフラロールバック
+- **手順書**: 障害対応手順の文書化
+
+対象ディレクトリ: `packages/infra/`, `.github/workflows/`

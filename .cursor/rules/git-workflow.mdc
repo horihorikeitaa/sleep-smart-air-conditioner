@@ -1,0 +1,132 @@
+---
+alwaysApply: false
+---
+
+
+# Git運用戦略とワークフロー
+
+## ブランチ戦略
+簡素化されたGit-flowベースの戦略を採用:
+
+### メインブランチ
+- **`main`**: 本番環境用、常にデプロイ可能な状態
+- **`develop`**: 次期リリース向け開発統合ブランチ
+
+### 支援ブランチ
+- **`feature/phase-{X}-{機能名}`**: 新機能開発
+- **`hotfix/v{バージョン}-{修正内容}`**: 緊急修正
+- **`release/v{バージョン}`**: リリース準備
+
+## コミットメッセージ規約
+Conventional Commits形式を使用:
+
+```
+<type>[scope]: <description>
+
+[optional body]
+
+[optional footer]
+```
+
+### タイプ
+- **feat**: 新機能追加
+- **fix**: バグ修正  
+- **docs**: ドキュメント変更
+- **style**: フォーマット変更
+- **refactor**: リファクタリング
+- **test**: テスト関連
+- **chore**: ビルド・ツール変更
+- **ci**: CI/CD設定変更
+
+### スコープ例
+- **backend**: Lambda関数
+- **frontend**: Next.js
+- **infra**: AWS CDK
+- **ml**: 機械学習
+- **api**: API Gateway
+- **data**: データ処理
+
+## PR戦略
+- 機能単位でPR作成
+- 自己レビュー実施
+- GitHub Actionsによる自動チェック必須
+- テンプレート使用で説明記載
+
+## ワークフロー例
+```bash
+# 新機能開発
+git checkout develop
+git pull origin develop
+git checkout -b feature/phase-0-switchbot-integration
+
+# 開発・コミット後
+git checkout develop
+git merge --no-ff feature/phase-0-switchbot-integration
+git push origin develop
+```
+
+詳細は `docs/git_workflow.md` を参照
+
+# Git運用戦略とワークフロー
+
+## ブランチ戦略
+簡素化されたGit-flowベースの戦略を採用:
+
+### メインブランチ
+- **`main`**: 本番環境用、常にデプロイ可能な状態
+- **`develop`**: 次期リリース向け開発統合ブランチ
+
+### 支援ブランチ
+- **`feature/phase-{X}-{機能名}`**: 新機能開発
+- **`hotfix/v{バージョン}-{修正内容}`**: 緊急修正
+- **`release/v{バージョン}`**: リリース準備
+
+## コミットメッセージ規約
+Conventional Commits形式を使用:
+
+```
+<type>[scope]: <description>
+
+[optional body]
+
+[optional footer]
+```
+
+### タイプ
+- **feat**: 新機能追加
+- **fix**: バグ修正  
+- **docs**: ドキュメント変更
+- **style**: フォーマット変更
+- **refactor**: リファクタリング
+- **test**: テスト関連
+- **chore**: ビルド・ツール変更
+- **ci**: CI/CD設定変更
+
+### スコープ例
+- **backend**: Lambda関数
+- **frontend**: Next.js
+- **infra**: AWS CDK
+- **ml**: 機械学習
+- **api**: API Gateway
+- **data**: データ処理
+
+## PR戦略
+- 機能単位でPR作成
+- 自己レビュー実施
+- GitHub Actionsによる自動チェック必須
+- テンプレート使用で説明記載
+
+## ワークフロー例
+```bash
+# 新機能開発
+git checkout develop
+git pull origin develop
+git checkout -b feature/phase-0-switchbot-integration
+
+# 開発・コミット後
+git checkout develop
+git merge --no-ff feature/phase-0-switchbot-integration
+git push origin develop
+```
+
+詳細は `docs/git_workflow.md` を参照

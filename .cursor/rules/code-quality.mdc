@@ -1,0 +1,801 @@
+---
+description: コード品質ガイドライン。TypeScript,Pythonの品質ガイドラインになります。
+alwaysApply: false
+---
+# コード品質ガイドライン
+
+## JavaScript/TypeScript 開発環境
+
+### Biome による統一ツールチェーン
+**ESLint + Prettierの代替として、パフォーマンスと統一性を重視してBiomeを採用**
+
+```json
+// biome.json
+{
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "lineEnding": "lf"
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noUndeclaredVariables": "error"
+      },
+      "style": {
+        "useConst": "error",
+        "useTemplate": "warn"
+      },
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noConsoleLog": "warn"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "trailingComma": "es5",
+      "semicolons": "always"
+    }
+  },
+  "typescript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "trailingComma": "es5",
+      "semicolons": "always"
+    }
+  }
+}
+```
+
+### TypeScript型安全性
+```typescript
+// 型定義例
+interface SensorData {
+  readonly deviceId: string;
+  readonly timestamp: Date;
+  readonly temperature: number;
+  readonly humidity: number;
+  readonly illuminance: number;
+}
+
+// ユーティリティ型活用
+type PartialSensorData = Partial<SensorData>;
+type SensorDataInput = Omit<SensorData, 'timestamp'>;
+
+// バリデーション実装
+import { z } from 'zod';
+
+const SensorDataSchema = z.object({
+  deviceId: z.string(),
+  temperature: z.number().min(-50).max(50),
+  humidity: z.number().min(0).max(100),
+  illuminance: z.number().min(0),
+});
+
+// 型ガード関数
+function isSensorData(data: unknown): data is SensorData {
+  return SensorDataSchema.safeParse(data).success;
+}
+```
+
+## Python 開発環境
+
+### Ruff による高速リンティング・フォーマッティング
+**Rustベースの高速ツールを採用**
+
+```toml
+# pyproject.toml
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.isort]
+known-first-party = ["sleep_smart_ac"]
+```
+
+### mypy による型チェック
+```toml
+# pyproject.toml
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+```
+
+### Python コーディング規約
+```python
+# 型注釈を必須とする
+from typing import Dict, List, Optional, Protocol
+from datetime import datetime
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class SensorData:
+    """センサーデータの型安全な表現"""
+    device_id: str
+    timestamp: datetime
+    temperature: float
+    humidity: float
+    illuminance: float
+    
+    def __post_init__(self) -> None:
+        """バリデーション"""
+        if not (-50 <= self.temperature <= 50):
+            raise ValueError(f"Invalid temperature: {self.temperature}")
+        if not (0 <= self.humidity <= 100):
+            raise ValueError(f"Invalid humidity: {self.humidity}")
+        if self.illuminance < 0:
+            raise ValueError(f"Invalid illuminance: {self.illuminance}")
+
+# プロトコルを使用したインターフェース定義
+class SensorRepository(Protocol):
+    """センサーデータリポジトリのインターフェース"""
+    async def save(self, data: SensorData) -> None: ...
+    async def find_by_date_range(
+        self, start: datetime, end: datetime
+    ) -> List[SensorData]: ...
+```
+
+## テスト戦略
+
+### テストピラミッド
+- **単体テスト**: 70% - ビジネスロジック中心
+- **統合テスト**: 20% - API エンドポイント
+- **E2Eテスト**: 10% - 重要なユーザーフロー
+
+### TypeScript テスト（Jest + Testing Library）
+```typescript
+describe('SensorDataService', () => {
+  beforeEach(() => {
+    // セットアップ
+  });
+
+  test('should validate sensor data correctly', () => {
+    // Arrange
+    const validData = {
+      deviceId: 'test-device',
+      temperature: 25.5,
+      humidity: 60,
+      illuminance: 100
+    };
+
+    // Act
+    const result = validateSensorData(validData);
+
+    // Assert
+    expect(result.isValid).toBe(true);
+  });
+
+  test('should handle invalid temperature', () => {
+    // エラーケースのテスト
+    const invalidData = { ...validData, temperature: 100 };
+    expect(() => validateSensorData(invalidData)).toThrow();
+  });
+});
+```
+
+### Python テスト（pytest）
+```python
+# tests/test_sensor_data.py
+import pytest
+from datetime import datetime
+from sleep_smart_ac.models import SensorData
+
+class TestSensorData:
+    """センサーデータのテストクラス"""
+    
+    def test_valid_sensor_data_creation(self) -> None:
+        """正常なセンサーデータ作成のテスト"""
+        # Arrange
+        data = SensorData(
+            device_id="test-device",
+            timestamp=datetime.now(),
+            temperature=25.5,
+            humidity=60.0,
+            illuminance=100.0
+        )
+        
+        # Assert
+        assert data.device_id == "test-device"
+        assert data.temperature == 25.5
+
+    def test_invalid_temperature_raises_error(self) -> None:
+        """無効な温度値でエラーが発生することのテスト"""
+        # Act & Assert
+        with pytest.raises(ValueError, match="Invalid temperature"):
+            SensorData(
+                device_id="test-device",
+                timestamp=datetime.now(),
+                temperature=100.0,  # 無効な値
+                humidity=60.0,
+                illuminance=100.0
+            )
+
+    @pytest.mark.asyncio
+    async def test_sensor_repository_save(
+        self, mock_sensor_repository: SensorRepository
+    ) -> None:
+        """リポジトリの保存機能テスト"""
+        # Arrange
+        data = SensorData(...)
+        
+        # Act
+        await mock_sensor_repository.save(data)
+        
+        # Assert
+        # モックの呼び出し確認
+```
+
+## パッケージ管理とツール設定
+
+### package.json（TypeScript/JavaScript）
+```json
+{
+  "scripts": {
+    "lint": "biome lint ./src",
+    "lint:fix": "biome lint --apply ./src",
+    "format": "biome format --write ./src",
+    "check": "biome check --apply ./src",
+    "type-check": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "build": "tsc && biome check ./dist"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.4.1",
+    "typescript": "^5.3.0",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.0"
+  }
+}
+```
+
+### pyproject.toml（Python）
+```toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sleep-smart-ac"
+version = "0.1.0"
+dependencies = [
+    "fastapi>=0.104.0",
+    "pydantic>=2.5.0",
+    "boto3>=1.34.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.1.8",
+    "mypy>=1.7.0",
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pre-commit>=3.6.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --cov=src --cov-report=term-missing"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+```
+
+## Git Hooks による自動品質チェック
+
+### pre-commit 設定
+```yaml
+# .pre-commit-config.yaml
+repos:
+  # TypeScript/JavaScript
+  - repo: local
+    hooks:
+      - id: biome-check
+        name: Biome Check
+        entry: npx @biomejs/biome check --apply
+        language: system
+        files: \.(js|ts|jsx|tsx)$
+        
+  # Python  
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.8
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+        
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.7.1
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-all]
+```
+
+## コードレビューチェックリスト
+
+### 機能要件
+- [ ] 仕様要件を満たしているか
+- [ ] エラーケースが適切にハンドリングされているか
+- [ ] エッジケースが考慮されているか
+- [ ] 型安全性が確保されているか
+
+### 非機能要件
+- [ ] パフォーマンスへの影響は許容範囲内か
+- [ ] セキュリティ脆弱性はないか
+- [ ] スケーラビリティは考慮されているか
+- [ ] メモリ使用量は適切か
+
+### 保守性
+- [ ] コードの可読性は良好か
+- [ ] 適切なコメントが記載されているか（JSDoc/docstring）
+- [ ] 命名規則は一貫しているか
+- [ ] 単一責任の原則が守られているか
+
+### テスト品質
+- [ ] 単体テストのカバレッジが80%以上か
+- [ ] 境界値テストが含まれているか
+- [ ] モックが適切に使用されているか
+- [ ] 非同期処理のテストが適切か
+
+## 自動化ツールの利点
+
+### Biome（TypeScript/JavaScript）
+- **高速**: Rustベースで10-100倍高速
+- **統一**: リンティング・フォーマッティングが一つのツール
+- **LSPサポート**: エディタ統合が優秀
+- **設定簡素**: 単一設定ファイル
+
+### Ruff（Python）
+- **高速**: Rustベースで従来ツールより10-100倍高速
+- **包括性**: flake8、isort、pyupgradeなど複数ツールを統合
+- **互換性**: 既存のflake8設定からの移行が容易
+- **活発な開発**: 新機能の追加が早い
+
+この構成により、TypeScriptとPythonの両方で最新のベストプラクティスを適用し、高速で一貫した開発体験を実現できます。
+
+- **Husky**: Git hooks
+- **lint-staged**: ステージされたファイルのみ処理
+
+# コード品質ガイドライン
+
+## JavaScript/TypeScript 開発環境
+
+### Biome による統一ツールチェーン
+**ESLint + Prettierの代替として、パフォーマンスと統一性を重視してBiomeを採用**
+
+```json
+// biome.json
+{
+  "formatter": {
+    "enabled": true,
+    "formatWithErrors": false,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "lineEnding": "lf"
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "error",
+        "noUndeclaredVariables": "error"
+      },
+      "style": {
+        "useConst": "error",
+        "useTemplate": "warn"
+      },
+      "suspicious": {
+        "noExplicitAny": "error",
+        "noConsoleLog": "warn"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "trailingComma": "es5",
+      "semicolons": "always"
+    }
+  },
+  "typescript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "trailingComma": "es5",
+      "semicolons": "always"
+    }
+  }
+}
+```
+
+### TypeScript型安全性
+```typescript
+// 型定義例
+interface SensorData {
+  readonly deviceId: string;
+  readonly timestamp: Date;
+  readonly temperature: number;
+  readonly humidity: number;
+  readonly illuminance: number;
+}
+
+// ユーティリティ型活用
+type PartialSensorData = Partial<SensorData>;
+type SensorDataInput = Omit<SensorData, 'timestamp'>;
+
+// バリデーション実装
+import { z } from 'zod';
+
+const SensorDataSchema = z.object({
+  deviceId: z.string(),
+  temperature: z.number().min(-50).max(50),
+  humidity: z.number().min(0).max(100),
+  illuminance: z.number().min(0),
+});
+
+// 型ガード関数
+function isSensorData(data: unknown): data is SensorData {
+  return SensorDataSchema.safeParse(data).success;
+}
+```
+
+## Python 開発環境
+
+### Ruff による高速リンティング・フォーマッティング
+**Rustベースの高速ツールを採用**
+
+```toml
+# pyproject.toml
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.isort]
+known-first-party = ["sleep_smart_ac"]
+```
+
+### mypy による型チェック
+```toml
+# pyproject.toml
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+```
+
+### Python コーディング規約
+```python
+# 型注釈を必須とする
+from typing import Dict, List, Optional, Protocol
+from datetime import datetime
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class SensorData:
+    """センサーデータの型安全な表現"""
+    device_id: str
+    timestamp: datetime
+    temperature: float
+    humidity: float
+    illuminance: float
+    
+    def __post_init__(self) -> None:
+        """バリデーション"""
+        if not (-50 <= self.temperature <= 50):
+            raise ValueError(f"Invalid temperature: {self.temperature}")
+        if not (0 <= self.humidity <= 100):
+            raise ValueError(f"Invalid humidity: {self.humidity}")
+        if self.illuminance < 0:
+            raise ValueError(f"Invalid illuminance: {self.illuminance}")
+
+# プロトコルを使用したインターフェース定義
+class SensorRepository(Protocol):
+    """センサーデータリポジトリのインターフェース"""
+    async def save(self, data: SensorData) -> None: ...
+    async def find_by_date_range(
+        self, start: datetime, end: datetime
+    ) -> List[SensorData]: ...
+```
+
+## テスト戦略
+
+### テストピラミッド
+- **単体テスト**: 70% - ビジネスロジック中心
+- **統合テスト**: 20% - API エンドポイント
+- **E2Eテスト**: 10% - 重要なユーザーフロー
+
+### TypeScript テスト（Jest + Testing Library）
+```typescript
+describe('SensorDataService', () => {
+  beforeEach(() => {
+    // セットアップ
+  });
+
+  test('should validate sensor data correctly', () => {
+    // Arrange
+    const validData = {
+      deviceId: 'test-device',
+      temperature: 25.5,
+      humidity: 60,
+      illuminance: 100
+    };
+
+    // Act
+    const result = validateSensorData(validData);
+
+    // Assert
+    expect(result.isValid).toBe(true);
+  });
+
+  test('should handle invalid temperature', () => {
+    // エラーケースのテスト
+    const invalidData = { ...validData, temperature: 100 };
+    expect(() => validateSensorData(invalidData)).toThrow();
+  });
+});
+```
+
+### Python テスト（pytest）
+```python
+# tests/test_sensor_data.py
+import pytest
+from datetime import datetime
+from sleep_smart_ac.models import SensorData
+
+class TestSensorData:
+    """センサーデータのテストクラス"""
+    
+    def test_valid_sensor_data_creation(self) -> None:
+        """正常なセンサーデータ作成のテスト"""
+        # Arrange
+        data = SensorData(
+            device_id="test-device",
+            timestamp=datetime.now(),
+            temperature=25.5,
+            humidity=60.0,
+            illuminance=100.0
+        )
+        
+        # Assert
+        assert data.device_id == "test-device"
+        assert data.temperature == 25.5
+
+    def test_invalid_temperature_raises_error(self) -> None:
+        """無効な温度値でエラーが発生することのテスト"""
+        # Act & Assert
+        with pytest.raises(ValueError, match="Invalid temperature"):
+            SensorData(
+                device_id="test-device",
+                timestamp=datetime.now(),
+                temperature=100.0,  # 無効な値
+                humidity=60.0,
+                illuminance=100.0
+            )
+
+    @pytest.mark.asyncio
+    async def test_sensor_repository_save(
+        self, mock_sensor_repository: SensorRepository
+    ) -> None:
+        """リポジトリの保存機能テスト"""
+        # Arrange
+        data = SensorData(...)
+        
+        # Act
+        await mock_sensor_repository.save(data)
+        
+        # Assert
+        # モックの呼び出し確認
+```
+
+## パッケージ管理とツール設定
+
+### package.json（TypeScript/JavaScript）
+```json
+{
+  "scripts": {
+    "lint": "biome lint ./src",
+    "lint:fix": "biome lint --apply ./src",
+    "format": "biome format --write ./src",
+    "check": "biome check --apply ./src",
+    "type-check": "tsc --noEmit",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "build": "tsc && biome check ./dist"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.4.1",
+    "typescript": "^5.3.0",
+    "jest": "^29.7.0",
+    "@types/jest": "^29.5.0"
+  }
+}
+```
+
+### pyproject.toml（Python）
+```toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sleep-smart-ac"
+version = "0.1.0"
+dependencies = [
+    "fastapi>=0.104.0",
+    "pydantic>=2.5.0",
+    "boto3>=1.34.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.1.8",
+    "mypy>=1.7.0",
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pre-commit>=3.6.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --cov=src --cov-report=term-missing"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+```
+
+## Git Hooks による自動品質チェック
+
+### pre-commit 設定
+```yaml
+# .pre-commit-config.yaml
+repos:
+  # TypeScript/JavaScript
+  - repo: local
+    hooks:
+      - id: biome-check
+        name: Biome Check
+        entry: npx @biomejs/biome check --apply
+        language: system
+        files: \.(js|ts|jsx|tsx)$
+        
+  # Python  
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.8
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+        
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.7.1
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-all]
+```
+
+## コードレビューチェックリスト
+
+### 機能要件
+- [ ] 仕様要件を満たしているか
+- [ ] エラーケースが適切にハンドリングされているか
+- [ ] エッジケースが考慮されているか
+- [ ] 型安全性が確保されているか
+
+### 非機能要件
+- [ ] パフォーマンスへの影響は許容範囲内か
+- [ ] セキュリティ脆弱性はないか
+- [ ] スケーラビリティは考慮されているか
+- [ ] メモリ使用量は適切か
+
+### 保守性
+- [ ] コードの可読性は良好か
+- [ ] 適切なコメントが記載されているか（JSDoc/docstring）
+- [ ] 命名規則は一貫しているか
+- [ ] 単一責任の原則が守られているか
+
+### テスト品質
+- [ ] 単体テストのカバレッジが80%以上か
+- [ ] 境界値テストが含まれているか
+- [ ] モックが適切に使用されているか
+- [ ] 非同期処理のテストが適切か
+
+## 自動化ツールの利点
+
+### Biome（TypeScript/JavaScript）
+- **高速**: Rustベースで10-100倍高速
+- **統一**: リンティング・フォーマッティングが一つのツール
+- **LSPサポート**: エディタ統合が優秀
+- **設定簡素**: 単一設定ファイル
+
+### Ruff（Python）
+- **高速**: Rustベースで従来ツールより10-100倍高速
+- **包括性**: flake8、isort、pyupgradeなど複数ツールを統合
+- **互換性**: 既存のflake8設定からの移行が容易
+- **活発な開発**: 新機能の追加が早い
+
+この構成により、TypeScriptとPythonの両方で最新のベストプラクティスを適用し、高速で一貫した開発体験を実現できます。
+
+- **Husky**: Git hooks
+- **lint-staged**: ステージされたファイルのみ処理
