@@ -2,13 +2,13 @@
 
 ## 概要
 
-`SleepWise` は、AWSサーバーレスアーキテクチャと機械学習 (ML) を活用し、快適な睡眠環境を自動で最適化するシステムです。SwitchBot Hub 2からの環境データ（温度、湿度、照度）とSwitchBot Plug Miniからの電力消費量をリアルタイムで収集。これらのデータとユーザーが入力する睡眠の質、さらに外部の睡眠データ（AutoSleep/Health Auto Export）を組み合わせ、機械学習モデルが最適なエアコン設定を導き出します。
+`SleepSmartAC` は、AWSサーバーレスアーキテクチャと機械学習 (ML) を活用し、快適な睡眠環境を自動で最適化するシステムです。SwitchBot Hub 2からの環境データ（温度、湿度、照度）とSwitchBot Plug Miniからの電力消費量をリアルタイムで収集。これらのデータとユーザーが入力する睡眠の質、さらに外部の睡眠データ（AutoSleep/Health Auto Export）を組み合わせ、機械学習モデルが最適なエアコン設定を導き出します。
 
 このプロジェクトは、単なるスマートホーム化に留まらず、以下のスキルセットを実践的に習得するための学習機会と位置づけています。
 
 * **クラウドネイティブ開発** (AWSサーバーレス)
 * **機械学習/AI** (データ収集、モデル構築、推論、MLOps)
-* **IoTデバイス連携** (Raspberry Pi, SwitchBot API)
+* **IoTデバイス連携** (SwitchBot API)
 * **フロントエンド開発** (Next.js/React/TypeScript)
 * **インフラストラクチャ・アズ・コード (IaC)**
 * **CI/CDパイプライン構築**
@@ -23,13 +23,13 @@
 
 ## アーキテクチャ概要
 
-`SleepWise` システムは、以下の主要コンポーネントで構成されるサーバーレスアーキテクチャを採用しています。
+`SleepSmartAC` システムは、以下の主要コンポーネントで構成されるサーバーレスアーキテクチャを採用しています。
 
-* **デバイス層:** Raspberry Pi、SwitchBot Hub 2、SwitchBot Plug Mini
-* **データ収集層:** AWS IoT Core
+* **デバイス層:** SwitchBot Hub 2, SwitchBot Plug Mini
+* **データ収集層:** AWS Lambda, Amazon EventBridge
 * **データストア層:** AWS DynamoDB, AWS S3
 * **バックエンド層:** AWS Lambda, AWS API Gateway
-* **フロントエンド層:** Next.js (AWS Amplify/S3 + CloudFrontでホスティング)
+* **フロントエンド層:** Next.js (AWS Amplifyでホスティング)
 * **機械学習層:** AWS SageMaker Studio Lab (開発), AWS Lambda (推論)
 
 より詳細なアーキテクチャ図は [docs/architecture.md](docs/architecture.md) を参照してください。
@@ -52,7 +52,7 @@
 
 ## ライセンス
 
-[TODO: プロジェクトのライセンスを記載]
+本プロジェクトはMITライセンスです。
 
 
 ---
