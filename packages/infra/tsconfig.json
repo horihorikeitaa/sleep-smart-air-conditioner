@@ -1,4 +1,5 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
     "module": "NodeNext",
@@ -24,6 +25,11 @@
       "./node_modules/@types"
     ]
   },
+  "include": [
+    "bin/**/*",
+    "lib/**/*",
+    "test/**/*"
+  ],
   "exclude": [
     "node_modules",
     "cdk.out"

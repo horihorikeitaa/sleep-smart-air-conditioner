@@ -8,7 +8,15 @@
     "build": "tsc",
     "watch": "tsc -w",
     "test": "jest",
-    "cdk": "cdk"
+    "cdk": "cdk",
+    "deploy": "cdk deploy",
+    "destroy": "cdk destroy",
+    "synth": "cdk synth",
+    "diff": "cdk diff",
+    "lint": "biome lint ./bin ./lib ./test",
+    "lint:fix": "biome lint --apply ./bin ./lib ./test",
+    "format": "biome format --write ./bin ./lib ./test",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
