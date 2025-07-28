@@ -3,6 +3,7 @@
     "version": "0.1.0",
     "private": true,
     "main": "src/index.ts",
+    "type": "module",
     "scripts": {
       "dev": "echo 'Backend dev server not implemented yet'",
       "build": "echo 'Backend build not implemented yet'", 
