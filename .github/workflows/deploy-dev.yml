@@ -1,0 +1,68 @@
+# 開発環境への自動デプロイワークフロー
+name: Deploy to Development
+
+on:
+  # developブランチにプッシュされた時
+  # なぜdevelop？→ 開発中の機能を継続的に開発環境で検証するため
+  push:
+    branches: [develop]
+
+  # 手動実行も可能
+  # なぜ手動？→ 特定のfeatureブランチを開発環境でテストしたい場合のため
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Environment to deploy"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+
+# 開発環境デプロイの並行実行制御
+concurrency:
+  group: deploy-dev
+  # 開発環境では新しいデプロイを優先
+  # なぜtrue？→ 最新の変更を素早く確認したいため、古いデプロイはキャンセルしてOK
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    # 開発環境用のGitHub環境設定
+    environment: development
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 開発環境用のAWS認証情報
+      # なぜ別の認証情報？→ 開発環境とプロダクション環境を分離、権限を最小限に
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # 開発環境用の認証情報（プロダクションとは別）
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_DEV }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_DEV }}
+          aws-region: ${{ vars.AWS_REGION || 'ap-northeast-1' }}
+
+      # 開発環境にCDKデプロイ
+      # なぜチェックなし？→ 開発環境では速度を優先、問題があっても影響は限定的
+      - name: CDK Deploy (Development)
+        run: npm run deploy:dev --workspace=packages/infra
+
+      # 開発環境デプロイ完了通知
+      - name: Post-deployment notification
+        run: |
+          echo "🔧 Development deployment completed"
+          # 将来的にSlackやDiscordに通知を送ることも可能

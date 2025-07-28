@@ -15,10 +15,29 @@ build/
 cdk.out/
 
 # ==================================================
-# Environment variables
+# Environment variables & Security
 # ==================================================
 .env
 .env.local
+.env.production
+.env.*.local
+
+# AWS認証情報 (セキュリティ重要)
+.aws/
+aws-config.json
+**/aws-credentials.*
+credentials
+credentials.*
+
+# CDK関連 (アカウント情報含む可能性)
+cdk.context.json
+.cdk.staging/
+
+# その他機密ファイル
+config/secrets.*
+*.pem
+*.key
+!*.key.example
 
 # ==================================================
 # IDE files

@@ -11,10 +11,11 @@
     ],
     "scripts": {
         "lint": "biome lint ./packages",
-        "lint:fix": "biome lint --apply ./packages",
-        "format": "biome format --write ./packages",
-        "check": "biome check --apply ./packages",
-        "type-check": "npm run type-check --workspaces",
+        "lint:fix": "biome lint --apply ./packages", 
+        "format:check": "biome check --files-ignore-unknown=true ./packages",
+        "format:write": "biome format --write ./packages",
+        "check": "biome check ./packages",
+        "check:fix": "biome check --apply ./packages",
         "test": "jest",
         "test:watch": "jest --watch", 
         "test:coverage": "jest --coverage",
@@ -25,6 +26,10 @@
         "dev:frontend": "npm run dev --workspace=packages/frontend",
         "dev:backend": "npm run dev --workspace=packages/backend",
         "deploy:infra": "npm run deploy --workspace=packages/infra",
+        "deploy:dev": "npm run deploy:dev --workspace=packages/infra",
+        "deploy:prod": "npm run deploy:prod --workspace=packages/infra", 
+        "synth:dev": "npm run synth:dev --workspace=packages/infra",
+        "synth:prod": "npm run synth:prod --workspace=packages/infra",
         "cdk": "npm run cdk --workspace=packages/infra"
     },
     "devDependencies": {
