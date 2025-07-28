@@ -4,6 +4,7 @@
       "lib": ["ES2022"],
       "module": "NodeNext",
       "moduleResolution": "NodeNext",
+      "esModuleInterop": true,
       "allowJs": true,
       "declaration": true,
       "declarationMap": true,
@@ -24,7 +25,6 @@
       "noFallthroughCasesInSwitch": true,
       "noUncheckedIndexedAccess": true,
       "noImplicitOverride": true,
-      "noPropertyAccessFromIndexSignature": true,
       "allowUnusedLabels": false,
       "allowUnreachableCode": false,
       "skipLibCheck": true,
@@ -33,7 +33,13 @@
       "isolatedModules": true,
       "verbatimModuleSyntax": true,
       "experimentalDecorators": true,
-      "emitDecoratorMetadata": true
+      "emitDecoratorMetadata": true,
+      "baseUrl": ".", // パス解決の基準点。ルートを意味する
+      "typeRoots": [
+          "./node_modules/@types",
+          "./packages/**/node_modules/@types", // 各パッケージのnode_modulesも参照
+          "./packages/common-types" // ★ これが追加する共通型定義ディレクトリのパス
+      ]
     },
     "exclude": [
       "node_modules",
