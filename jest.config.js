@@ -4,7 +4,7 @@ export default {
 	projects: [
 		{
 			displayName: "backend",
-			testMatch: ["<rootDir>/packages/backend/**/*.test.ts"],
+			testMatch: ["<rootDir>/packages/backend/__tests__/**/*.test.ts"],
 			preset: "ts-jest/presets/default-esm",
 			extensionsToTreatAsEsm: [".ts"],
 			testEnvironment: "node",
