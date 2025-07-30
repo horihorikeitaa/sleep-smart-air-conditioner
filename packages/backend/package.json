@@ -1,0 +1,28 @@
+{
+	"name": "backend",
+	"version": "0.1.0",
+	"private": true,
+	"main": "src/index.ts",
+	"type": "module",
+	"scripts": {
+		"dev": "tsx watch src/index.ts",
+		"build": "tsc --build",
+		"lint": "biome lint ./src",
+		"lint:fix": "biome lint --apply ./src",
+		"format": "biome format --write ./src",
+		"type-check": "tsc --noEmit",
+		"test": "jest",
+		"test:watch": "jest --watch",
+		"test:coverage": "jest --coverage",
+		"clean": "rm -rf dist coverage"
+	},
+	"devDependencies": {
+		"@types/aws-lambda": "^8.10.152",
+		"@types/jest": "^29.5.14",
+		"@types/node": "^20.0.0"
+	},
+	"dependencies": {
+		"@aws-sdk/client-dynamodb": "^3.856.0",
+		"@aws-sdk/lib-dynamodb": "^3.856.0"
+	}
+}

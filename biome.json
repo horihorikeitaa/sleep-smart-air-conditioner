@@ -1,0 +1,59 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.1.2/schema.json",
+	"files": {
+		"ignoreUnknown": false
+	},
+	"vcs": {
+		"enabled": true,
+		"clientKind": "git",
+		"useIgnoreFile": true
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "space", // ここを "tab" から "space" に変更
+		"indentWidth": 2,       // インデント幅を2スペースに設定 (よく使われます)
+		"lineWidth": 100,       // 行の最大文字数を設定 (チームの規約に合わせる)
+		"lineEnding": "lf"      // 行末の改行コードをLFに統一 (Windows/Mac/Linux間の互換性のため)
+	},
+	"linter": {
+		"enabled": true,
+		"rules": {
+			"recommended": true,
+			"correctness": {
+				"noUnusedVariables": "error", // 使われていない変数をエラーにする (以前の設定)
+				"noUndeclaredVariables": "error", // 未宣言の変数をエラーにする (以前の設定)
+				"useExhaustiveDependencies": "warn" // React hooksなどの依存配列に関する警告 (以前の設定)
+			},
+			"style": {
+				"useConst": "error", // constを使える場合にvar/letを禁止 (以前の設定)
+				"useTemplate": "warn", // テンプレートリテラルを推奨 (以前の設定)
+				// Biome 2.x.x で `useShorthandArrayType` が削除された可能性があるので、ここでは追加しない
+			},
+			"suspicious": {
+				"noExplicitAny": "warn", // TypeScriptでanyの使用を警告 (以前の設定)
+				"noDebugger": "error", // debugger文を禁止 (以前の設定)
+			},
+			"complexity": {
+				"noBannedTypes": "error", // 特定の禁止された型を禁止 (以前の設定)
+				"noUselessTypeConstraint": "error" // 無駄な型制約を禁止 (以前の設定)
+			},
+			"performance": {
+				"noDelete": "warn" // delete演算子の使用を警告 (以前の設定)
+			}
+		}
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "single", // ダブルクォーテーションかシングルクォーテーションか
+			"semicolons": "always"  // セミコロンの強制 (always, asNeeded など)
+		}
+	},
+	"assist": {
+		"enabled": true,
+		"actions": {
+			"source": {
+				"organizeImports": "on"
+			}
+		}
+	}
+}

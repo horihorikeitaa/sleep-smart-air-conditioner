@@ -1,0 +1,52 @@
+{
+    "compilerOptions": {
+      "target": "ES2022",
+      "lib": ["ES2022"],
+      "module": "NodeNext",
+      "moduleResolution": "NodeNext",
+      "esModuleInterop": true,
+      "allowJs": true,
+      "declaration": true,
+      "declarationMap": true,
+      "sourceMap": true,
+      "outDir": "./dist",
+      "strict": true,
+      "noImplicitAny": true,
+      "strictNullChecks": true,
+      "strictFunctionTypes": true,
+      "strictBindCallApply": true,
+      "strictPropertyInitialization": true,
+      "noImplicitThis": true,
+      "alwaysStrict": true,
+      "noUnusedLocals": true,
+      "noUnusedParameters": true,
+      "exactOptionalPropertyTypes": true,
+      "noImplicitReturns": true,
+      "noFallthroughCasesInSwitch": true,
+      "noUncheckedIndexedAccess": true,
+      "noImplicitOverride": true,
+      "allowUnusedLabels": false,
+      "allowUnreachableCode": false,
+      "skipLibCheck": true,
+      "forceConsistentCasingInFileNames": true,
+      "resolveJsonModule": true,
+      "isolatedModules": true,
+      "verbatimModuleSyntax": true,
+      "experimentalDecorators": true,
+      "emitDecoratorMetadata": true,
+      "baseUrl": ".", // パス解決の基準点。ルートを意味する
+      "typeRoots": [
+          "./node_modules/@types",
+          "./packages/**/node_modules/@types", // 各パッケージのnode_modulesも参照
+          "./packages/common-types" // ★ これが追加する共通型定義ディレクトリのパス
+      ]
+    },
+    "exclude": [
+      "node_modules",
+      "dist",
+      "build",
+      "cdk.out",
+      "**/*.test.ts",
+      "**/*.spec.ts"
+    ]
+  }

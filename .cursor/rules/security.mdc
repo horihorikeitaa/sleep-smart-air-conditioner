@@ -1,0 +1,181 @@
+---
+alwaysApply: true
+---
+
+# セキュリティガイドライン - パブリックリポジトリ個人開発
+
+## 🚨 重要な前提条件
+
+- **パブリックリポジトリ**: すべてのコードとコミット履歴が公開される
+- **個人開発**: レビュアーやチーム承認がない環境
+- **GitHub Actions**: 無制限利用可能だが、ログも公開される
+
+## 🔐 絶対禁止事項
+
+### 1. 認証情報の直接記述禁止
+
+```typescript
+// ❌ 絶対禁止 - AWSキーをコードに直接書く
+const AWS_ACCESS_KEY = "AKIA1234567890ABCDEF";
+
+// ❌ 絶対禁止 - 設定ファイルに直接書く
+export const config = {
+  aws: {
+    accessKeyId: "AKIA1234567890ABCDEF", // パブリックリポジトリでは絶対NG
+  },
+};
+
+// ✅ 正しい方法 - 環境変数から取得
+const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
+```
+
+### 2. 設定ファイルでの機密情報禁止
+
+```typescript
+// ❌ 禁止 - 本番環境の具体的な値
+export const prodConfig = {
+  database: {
+    host: "prod-db.company.com", // 本番DBホスト名の漏洩
+    password: "secret123", // パスワードの漏洩
+  },
+};
+
+// ✅ 正しい方法 - 環境変数経由
+export const prodConfig = {
+  database: {
+    host: process.env.DB_HOST || "localhost",
+    password: process.env.DB_PASSWORD,
+  },
+};
+```
+
+### 3. ログ出力での情報漏洩禁止
+
+```typescript
+// ❌ 禁止 - GitHub ActionsのログでAWSキーが見える
+console.log(`AWS Config: ${JSON.stringify(awsConfig)}`);
+
+// ❌ 禁止 - デバッグ情報に機密データ
+logger.debug("Request headers:", headers); // Authorization headerが含まれる可能性
+
+// ✅ 正しい方法 - 機密情報をマスク
+console.log(`AWS Region: ${awsConfig.region}`); // リージョンは公開してもOK
+logger.debug("Request headers:", maskSensitiveData(headers));
+```
+
+## 🛡️ セキュリティ対策
+
+### 1. GitHub Secrets の適切な利用
+
+```yaml
+# GitHub Actions でのSecret利用例
+- name: Configure AWS credentials
+  uses: aws-actions/configure-aws-credentials@v4
+  with:
+    # ✅ Secretsから取得（ログには表示されない）
+    aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    # ✅ 公開情報はVariablesでOK
+    aws-region: ${{ vars.AWS_REGION }}
+```
+
+### 2. .gitignore による機密ファイル除外
+
+```gitignore
+# AWS認証情報
+.aws/
+aws-config.json
+**/aws-credentials.*
+
+# 環境設定ファイル
+.env
+.env.local
+.env.production
+.env.*.local
+
+# ログファイル
+*.log
+logs/
+
+# CDK出力（アカウント情報含む可能性）
+cdk.out/
+cdk.context.json
+```
+
+### 3. CDK 出力の機密情報対策
+
+```typescript
+// CDK Stack でのセキュリティ考慮
+export class DataStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
+
+    // ✅ アカウント情報をハードコードしない
+    // CDKが自動的に現在のアカウント/リージョンを使用
+
+    // ❌ 禁止 - アカウントIDをハードコード
+    // account: "123456789012"
+  }
+}
+```
+
+## 🔍 コードレビューチェックポイント
+
+### コミット前の確認事項
+
+1. **grep チェック**: `grep -r "AKIA\|aws_secret\|password" . --exclude-dir=node_modules`
+2. **環境変数チェック**: 機密情報が環境変数経由で取得されているか
+3. **ログ出力チェック**: console.log や logger に機密情報がないか
+4. **.gitignore チェック**: 機密ファイルが適切に除外されているか
+
+### GitHub Actions での確認事項
+
+1. **Secrets 使用**: 認証情報はすべて Secrets から取得
+2. **ログマスク**: 機密情報が Action ログに出力されていないか
+3. **アーティファクト**: アップロードするファイルに機密情報がないか
+
+## 🚨 緊急時対応
+
+### 認証情報が漏洩した場合
+
+1. **即座にキーを無効化** (AWS IAM でキーを削除)
+2. **GitHub Secrets を更新**
+3. **コミット履歴の確認** (git log --grep="AKIA")
+4. **必要に応じてリポジトリの一時プライベート化**
+
+### 対策例
+
+```bash
+# コミット履歴から機密情報を検索
+git log --all --grep="AKIA" --grep="aws_secret" --grep="password"
+
+# ファイル内容から機密情報を検索
+git log -p --all | grep -E "(AKIA|aws_secret|password)"
+```
+
+## 📋 個人開発での運用ルール
+
+### 1. GitHub 設定
+
+- **Branch protection**: main ブランチで CI チェック必須
+- **Environment**: production 環境で manual approval は不要（個人開発のため）
+- **Secrets**: 開発環境と本番環境で異なる AWS アカウント使用推奨
+
+### 2. AWS 設定
+
+- **IAM Policy**: 最小権限の原則（必要なリソースのみアクセス許可）
+- **アカウント分離**: 可能であれば開発用と本番用で AWS アカウント分離
+- **CloudTrail**: API 使用履歴の監視
+
+### 3. 定期的なセキュリティチェック
+
+- **月次**: AWS 請求額の確認（不正使用の早期発見）
+- **週次**: GitHub Actions の実行ログ確認
+- **コミット時**: 上記チェックポイントの実施
+
+このガイドラインに従って、安全にパブリックリポジトリでの開発を行う。
+description:
+globs:
+alwaysApply: false
+
+---

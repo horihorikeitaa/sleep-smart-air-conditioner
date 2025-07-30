@@ -1,0 +1,344 @@
+# ワークフローの名前（GitHub UIで表示される）
+name: CI
+
+# いつこのワークフローを実行するかの設定
+on:
+  # プッシュされた時に実行する（コードが更新された時）
+  push:
+    # 対象ブランチを指定（main, develop, feature/で始まるブランチ）
+    # なぜ必要？→ 重要なブランチのコード品質を常に監視するため
+    branches: [main, develop, "feature/**"]
+
+  # プルリクエストが作成・更新された時に実行
+  # なぜ必要？→ マージ前にコード品質をチェックして、問題のあるコードがmainに入るのを防ぐ
+  pull_request:
+    branches: [main, develop]
+
+# 並行実行の制御（同時に実行されるワークフローの管理）
+concurrency:
+  # 同じブランチで複数のワークフローが走らないようにグループ化
+  # なぜ必要？→ リソースの無駄遣いを防ぎ、最新のコードだけをチェックするため
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # 新しいワークフローが開始されたら古いものをキャンセル
+  # なぜ必要？→ 古い結果に惑わされず、最新の変更だけを検証するため
+  cancel-in-progress: true
+
+jobs:
+  # 最初のジョブ：依存関係のセットアップとキャッシュ
+  # なぜ分離？→ 他のジョブで共通して使う依存関係を一度だけインストールして効率化
+  setup:
+    name: Setup and Cache
+    # Ubuntu最新版で実行（安定性とコストのバランスが良い）
+    runs-on: ubuntu-latest
+    # 他のジョブで使用するデータを出力
+    outputs:
+      # キャッシュヒットしたかどうかを他のジョブに伝える
+      # なぜ必要？→ キャッシュがあれば依存関係のインストールをスキップして時間短縮
+      cache-hit: ${{ steps.cache-deps.outputs.cache-hit }}
+
+    steps:
+      # ソースコードをチェックアウト（ダウンロード）
+      # なぜ必要？→ GitHub ActionsのVMは空なので、まずコードを取得する必要がある
+      - name: Checkout
+        uses: actions/checkout@v4 # v4は最新の安定版
+
+      # Node.jsの環境をセットアップ
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          # Node.js 18を使用（LTS版で安定している）
+          node-version: "18"
+          # npmのキャッシュを有効化
+          # なぜ必要？→ package-lock.jsonが変わらない限り、ダウンロード時間を短縮
+          cache: "npm"
+
+      # セキュリティチェック: 機密情報の事前検出
+      # なぜ必要？→ パブリックリポジトリでAWSキーなどの機密情報流出を防ぐため
+      - name: Security Scan - Check for secrets
+        run: |
+          echo "🔍 Scanning for potential secrets..."
+          # AWS キーパターンの検出（ドキュメントとワークフローファイルは除外）
+          if grep -r "AKIA[0-9A-Z]" . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=docs --exclude-dir=.github --exclude="*.md" --exclude="*.mdc"; then
+            echo "❌ AWS Access Key detected in code!"
+            exit 1
+          fi
+          # その他の機密情報パターン（GitHub Secrets形式は除外、ドキュメントも除外）
+          if grep -r "aws_secret_access_key\|AWS_SECRET" . --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=docs --exclude-dir=.github --exclude="*.md" --exclude="*.mdc" | grep -v 'secrets\.' | grep -v 'if grep -r'; then
+            echo "❌ AWS Secret Key pattern detected!"
+            exit 1
+          fi
+          echo "✅ No secrets detected in code"
+
+      # 依存関係のキャッシュ設定
+      - name: Cache dependencies
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          # キャッシュするディレクトリを指定
+          # なぜnode_modulesをキャッシュ？→ npm installは時間がかかるため
+          path: |
+            node_modules
+            packages/*/node_modules
+          # キャッシュのキー（package-lock.jsonが変わるとキャッシュも無効になる）
+          # なぜpackage-lock.json？→ 依存関係が変わった時だけ再インストールしたいため
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}
+          # 部分的なキャッシュキー（完全一致しない場合の代替）
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      # 依存関係のインストール（キャッシュがない場合のみ）
+      - name: Install dependencies
+        # キャッシュヒットしなかった場合のみ実行
+        # なぜ条件付き？→ 既にキャッシュがあれば無駄な時間を使わないため
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+        # npm ciを使用（npm installより高速で確実）
+        # なぜnpm ci？→ package-lock.jsonに従って確実にインストールし、本番環境と同じ状態にするため
+        run: npm ci
+
+  # Lintとフォーマットのチェック
+  # なぜ分離？→ 並列実行で時間短縮、問題の特定が容易
+  lint-and-format:
+    name: Lint and Format Check
+    runs-on: ubuntu-latest
+    # setupジョブの完了を待つ
+    # なぜ依存？→ キャッシュされた依存関係を使いたいため
+    needs: setup
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      # キャッシュされた依存関係を復元
+      - name: Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+          # setupジョブと同じキーを使用
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}
+
+      # キャッシュがなかった場合のみインストール
+      - name: Install dependencies
+        if: needs.setup.outputs.cache-hit != 'true'
+        run: npm ci
+
+      # Biomeでlintチェック
+      # なぜ必要？→ コードの品質問題、潜在的なバグ、スタイルの統一を確保
+      - name: Run Biome Lint
+        run: npm run lint
+
+      # Biomeでフォーマットチェック
+      # なぜ必要？→ コードのフォーマットが統一されているかチェック
+      # --checkオプション？→ 実際にファイルを変更せず、チェックのみ行う
+      - name: Check Biome Format
+        run: npm run format:check
+
+  # TypeScriptの型チェック
+  # なぜ重要？→ 実行時エラーを事前に防ぐ、IDEで捕捉できない型エラーを検出
+  type-check:
+    name: TypeScript Type Check
+    runs-on: ubuntu-latest
+    needs: setup
+    # マトリックス戦略：複数のパッケージを並列でチェック
+    # なぜマトリックス？→ 各パッケージを並列でチェックして時間短縮
+    strategy:
+      matrix:
+        package: [backend, infra] # TODO: frontendが準備できたら追加
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        if: needs.setup.outputs.cache-hit != 'true'
+        run: npm ci
+
+      # パッケージごとの型チェック
+      # なぜパッケージ別？→ エラーの原因特定が容易、並列実行で高速化
+      - name: TypeScript Check - ${{ matrix.package }}
+        run: npm run type-check --workspace=packages/${{ matrix.package }}
+
+  # テストの実行
+  # なぜ必要？→ 機能が正しく動作することを確認、リグレッション（機能の劣化）を防ぐ
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: setup
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        if: needs.setup.outputs.cache-hit != 'true'
+        run: npm ci
+
+      # 全パッケージのテストを実行
+      - name: Run Tests
+        run: npm run test
+
+      # テストカバレッジレポートをアップロード
+      # なぜ必要？→ どの部分がテストされていないか可視化、コード品質の向上
+      - name: Upload coverage reports
+        # テストが失敗してもカバレッジは保存
+        # なぜalways？→ 失敗したテストでも部分的なカバレッジ情報は有用
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            packages/*/coverage/
+            !packages/*/coverage/tmp/  # 一時ファイルは除外
+          # 7日間保存（長すぎると容量を圧迫、短すぎると分析に不便）
+          retention-days: 7
+
+  # ビルドの確認
+  # なぜ必要？→ 本番環境でのビルドエラーを事前に検出
+  build:
+    name: Build Packages
+    runs-on: ubuntu-latest
+    needs: setup
+    # パッケージごとに並列ビルド
+    strategy:
+      matrix:
+        package: [backend, infra] # TODO: frontend は後で追加
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        if: needs.setup.outputs.cache-hit != 'true'
+        run: npm ci
+
+      # パッケージごとのビルド
+      - name: Build - ${{ matrix.package }}
+        run: npm run build --workspace=packages/${{ matrix.package }}
+
+  # CDK構文チェック
+  # なぜ重要？→ インフラのコード品質を確保、デプロイ前にエラーを検出
+  cdk-synth:
+    name: CDK Synth Check
+    runs-on: ubuntu-latest
+    # 他のチェックが成功した場合のみ実行
+    # なぜ依存？→ 基本的な品質チェックが通ってからインフラをチェックするため
+    needs: [setup, type-check, lint-and-format]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Restore dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            packages/*/node_modules
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json') }}
+
+      - name: Install dependencies
+        if: needs.setup.outputs.cache-hit != 'true'
+        run: npm ci
+
+      # CDKの構文チェック（CloudFormationテンプレート生成）
+      # なぜsynth？→ 実際にデプロイせずにテンプレートが正しく生成されるかチェック
+      # セキュリティ対策：ダミーのアカウント情報を使用して実際の情報を隠蔽
+      - name: CDK Synth (Dev) - Security Safe
+        run: npm run synth:dev --workspace=packages/infra
+        env:
+          # ダミーのアカウント情報を設定（実際の情報の流出を防ぐ）
+          # なぜダミー？→ パブリックリポジトリで実際のAWSアカウント情報を隠すため
+          CDK_DEFAULT_ACCOUNT: "123456789012"
+          CDK_DEFAULT_REGION: "us-east-1"
+
+      # 生成されたCDKテンプレートを保存
+      # なぜ保存？→ 問題があった時の調査、デプロイ内容の確認のため
+      - name: Upload CDK outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdk-outputs
+          path: packages/infra/cdk.out/
+          retention-days: 7
+
+  # 全ジョブ完了の確認
+  # なぜ必要？→ すべてのチェックが成功したことを明確に示す
+  ci-complete:
+    name: CI Complete
+    runs-on: ubuntu-latest
+    # すべてのチェックジョブの完了を待つ
+    needs: [lint-and-format, type-check, test, build, cdk-synth]
+    # 失敗したジョブがあっても実行
+    # なぜalways？→ 失敗の要約を提供するため
+    if: always()
+
+    steps:
+      # 全ジョブの結果をチェック
+      - name: Check all jobs
+        run: |
+          # 各ジョブの結果を確認
+          if [[ "${{ needs.lint-and-format.result }}" != "success" || \
+                "${{ needs.type-check.result }}" != "success" || \
+                "${{ needs.test.result }}" != "success" || \
+                "${{ needs.build.result }}" != "success" || \
+                "${{ needs.cdk-synth.result }}" != "success" ]]; then
+            echo "❌ One or more CI jobs failed"
+            # なぜexit 1？→ CIを失敗状態にして、PRのマージを防ぐ
+            exit 1
+          else
+            echo "✅ All CI jobs passed successfully"
+          fi

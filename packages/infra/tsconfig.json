@@ -1,0 +1,10 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"strictPropertyInitialization": false,
+		"typeRoots": ["../../node_modules/@types", "./node_modules/@types"],
+		"types": ["jest", "node"]
+	},
+	"include": ["bin/**/*", "lib/**/*", "test/**/*"],
+	"exclude": ["node_modules", "cdk.out"]
+}
