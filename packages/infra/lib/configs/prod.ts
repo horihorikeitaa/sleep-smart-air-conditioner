@@ -3,24 +3,24 @@ import type { EnvironmentConfig } from "./types.js";
 
 export const prodConfig: EnvironmentConfig = {
 	environment: "prod",
-	projectName: "sleep-smart-ac",
+	projectName: "sleep-smart-ac-prod",
 
-	// 本番環境：データ保護重視
+	// 本番環境：高可用性・セキュリティ重視
 	dynamodb: {
-		removalPolicy: RemovalPolicy.RETAIN,
-		pointInTimeRecovery: true, // バックアップあり
-		deletionProtection: true, // 削除保護あり
-		billingMode: "PAY_PER_REQUEST", // オンデマンド（IoTなので予測困難）
+		removalPolicy: RemovalPolicy.RETAIN, // データ保護
+		pointInTimeRecovery: true, // バックアップ有効
+		deletionProtection: true, // 削除保護有効
+		billingMode: "PAY_PER_REQUEST", // オンデマンド
 	},
 
 	// 本番環境：パフォーマンス重視
 	lambda: {
-		timeout: 300, // 5分
-		memorySize: 1024, // 1GB
-		logRetention: 365, // 1年
+		timeout: 30, // 30秒
+		memorySize: 512, // 512MB（本番用に増強）
+		logRetention: 30, // 30日間
 	},
 
-	// 本番環境：完全監視
+	// 本番環境：詳細監視
 	monitoring: {
 		enabled: true, // CloudWatch詳細監視ON
 		detailedMetrics: true,
