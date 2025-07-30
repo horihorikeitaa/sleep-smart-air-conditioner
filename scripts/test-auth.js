@@ -6,7 +6,7 @@
  * GitHub Secretsが正しく設定されているかを確認
  */
 
-const crypto = require("crypto");
+import crypto from "crypto";
 
 function testSwitchBotAuth() {
 	console.log("🔐 SwitchBot認証情報テスト開始...\n");
@@ -69,8 +69,6 @@ function testSwitchBotAuth() {
 }
 
 // メイン実行
-if (require.main === module) {
-	testSwitchBotAuth();
-}
+testSwitchBotAuth();
 
-module.exports = { testSwitchBotAuth };
+export { testSwitchBotAuth };

@@ -9,7 +9,7 @@
  * - ログに機密情報を出力しません
  */
 
-const crypto = require("crypto");
+import crypto from "crypto";
 
 /**
  * 実認証情報での署名生成テスト
@@ -180,11 +180,10 @@ async function main() {
 	}
 }
 
-if (require.main === module) {
-	main();
-}
+// メイン実行
+main();
 
-module.exports = {
+export {
 	testRealAuthSignature,
 	createRealWebhookEvent,
 	testLambdaLocallyWithRealAuth,
