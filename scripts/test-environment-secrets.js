@@ -6,7 +6,7 @@
  * 環境別のSwitchBot認証情報をテストします
  */
 
-const crypto = require("crypto");
+import crypto from "crypto";
 
 function testEnvironmentSecrets() {
 	console.log("🔐 GitHub Environment Secrets テスト開始...\n");
@@ -116,9 +116,14 @@ if (process.argv.includes("--help") || process.argv.includes("-h")) {
 	process.exit(0);
 }
 
-// メイン実行
-if (require.main === module) {
-	testEnvironmentSecrets();
-}
+import { dirname } from "path";
+// ES Modulesでのメイン実行判定
+import { fileURLToPath } from "url";
 
-module.exports = { testEnvironmentSecrets };
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// メイン実行
+testEnvironmentSecrets();
+
+export { testEnvironmentSecrets };
