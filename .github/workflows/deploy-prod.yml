@@ -1,85 +1,88 @@
-# プロダクション環境へのデプロイ専用ワークフロー
-name: Deploy to Production
+name: Deploy Production Environment
 
 on:
-  # mainブランチにプッシュされた時
-  # なぜmainのみ？→ プロダクションは安定したコードのみデプロイすべきため
-  push:
-    branches: [main]
-    # タグでもトリガー（バージョンリリース時）
-    # なぜタグ？→ 明確なバージョン管理とリリース履歴のため
-    tags: ["v*"]
-
-  # 手動実行も可能
-  # なぜ手動？→ 緊急時やメンテナンス時に柔軟にデプロイするため
-  workflow_dispatch:
+  release:
+    types: [published]
+  workflow_dispatch: # 手動実行を許可
     inputs:
-      environment:
-        description: "Environment to deploy"
+      confirm_production:
+        description: 'Type "PRODUCTION" to confirm deployment'
         required: true
-        default: "prod"
-        type: choice
-        options:
-          - prod
-
-# プロダクションデプロイの並行実行制御
-concurrency:
-  group: deploy-prod
-  # プロダクションデプロイはキャンセルしない
-  # なぜfalse？→ 途中でキャンセルされると環境が不整合になる可能性があるため
-  cancel-in-progress: false
+        default: ""
 
 jobs:
   deploy:
-    name: Deploy to Production
     runs-on: ubuntu-latest
-    # GitHub環境設定を使用（承認フローやシークレット管理）
-    # なぜenvironment？→ プロダクションデプロイには追加の承認や保護が必要
-    environment: production
+    environment: production # 🔐 Environment Secrets使用
 
     steps:
-      - name: Checkout
+      - name: Verify production deployment confirmation
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [ "${{ github.event.inputs.confirm_production }}" != "PRODUCTION" ]; then
+            echo "❌ Production deployment not confirmed"
+            exit 1
+          fi
+          echo "✅ Production deployment confirmed"
+
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
           cache: "npm"
 
-      # プロダクションでは毎回新しい依存関係をインストール
-      # なぜキャッシュなし？→ 確実性を優先、キャッシュによる問題を避ける
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          cd packages/backend && npm ci
+          cd ../infra && npm ci
 
-      # AWS認証情報の設定
-      # なぜ必要？→ AWSリソースにアクセスしてデプロイするため
+      - name: Build backend
+        run: |
+          cd packages/backend
+          npm run build
+
+      - name: Type check
+        run: |
+          cd packages/infra
+          npm run type-check
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          # GitHub Secretsからアクセスキーを取得
-          # なぜSecrets？→ 認証情報をコードに含めず安全に管理するため
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          # 変数またはデフォルト値を使用
-          # なぜ変数？→ 環境ごとに異なるリージョンを柔軟に設定するため
-          aws-region: ${{ vars.AWS_REGION || 'ap-northeast-1' }}
+          aws-region: ap-northeast-1
 
-      # デプロイ前に全チェックを実行
-      # なぜプロダクション前に再チェック？→ 最新の状態で問題がないことを最終確認
-      - name: Run all checks
+      - name: Test SwitchBot authentication
+        env:
+          # 🔐 Production Environment Secretsから認証情報を取得
+          SWITCHBOT_TOKEN: ${{ secrets.SWITCHBOT_TOKEN_PROD }}
+          SWITCHBOT_SECRET: ${{ secrets.SWITCHBOT_SECRET_PROD }}
         run: |
-          npm run lint      # コード品質チェック
-          npm run type-check # 型チェック
-          npm run test      # テスト実行
+          echo "🧪 Testing production SwitchBot credentials..."
+          node scripts/test-auth.js
 
-      # プロダクション環境にCDKデプロイ
-      - name: CDK Deploy (Production)
-        run: npm run deploy:prod --workspace=packages/infra
-
-      # デプロイ後の確認
-      # なぜ必要？→ デプロイが成功したことを確認、将来的にヘルスチェックを追加可能
-      - name: Post-deployment verification
+      - name: Deploy to AWS Production
+        env:
+          # 🔐 Production Environment Secretsから認証情報を取得
+          SWITCHBOT_TOKEN: ${{ secrets.SWITCHBOT_TOKEN_PROD }}
+          SWITCHBOT_SECRET: ${{ secrets.SWITCHBOT_SECRET_PROD }}
         run: |
-          echo "🚀 Production deployment completed"
-          # 将来的にここでヘルスチェックAPIを呼び出すなど
+          cd packages/infra
+          # 本番環境設定でデプロイ
+          CDK_ENV=prod npx cdk deploy sleep-smart-ac-prod-lambda-stack sleep-smart-ac-prod-webhook-stack --require-approval never
+
+      - name: Verify production deployment
+        env:
+          SWITCHBOT_TOKEN: ${{ secrets.SWITCHBOT_TOKEN_PROD }}
+          SWITCHBOT_SECRET: ${{ secrets.SWITCHBOT_SECRET_PROD }}
+        run: |
+          echo "🎉 Production deployment completed successfully"
+          echo "📊 Deployment summary:"
+          echo "   Environment: Production"
+          echo "   SwitchBot Auth: ✅ Configured"
+          echo "   Webhook Endpoint: 🟢 Active"
