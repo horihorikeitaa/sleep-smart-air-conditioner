@@ -1,4 +1,4 @@
-import { createHmac } from "crypto";
+import { createHmac } from "node:crypto";
 
 /**
  * SwitchBot Webhook認証モジュール
@@ -72,7 +72,7 @@ export function verifyWebhookSignature(
 
 		// タイムスタンプ形式確認
 		const timestamp = parseInt(t);
-		if (isNaN(timestamp) || timestamp <= 0) {
+		if (Number.isNaN(timestamp) || timestamp <= 0) {
 			console.warn("Invalid timestamp format:", t);
 			return false;
 		}
@@ -92,8 +92,8 @@ export function verifyWebhookSignature(
 
 		if (!isValid) {
 			console.warn("Webhook signature verification failed", {
-				received: sign.substring(0, 10) + "...",
-				expected: expectedSignature.substring(0, 10) + "...",
+				received: `${sign.substring(0, 10)}...`,
+				expected: `${expectedSignature.substring(0, 10)}...`,
 			});
 		}
 
