@@ -46,8 +46,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          # Node.js 18を使用（LTS版で安定している）
-          node-version: "18"
+          node-version: "20"
           # npmのキャッシュを有効化
           # なぜ必要？→ package-lock.jsonが変わらない限り、ダウンロード時間を短縮
           cache: "npm"
@@ -111,7 +110,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
           cache: "npm"
 
       # キャッシュされた依存関係を復元
@@ -159,7 +158,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
           cache: "npm"
 
       - name: Restore dependencies
@@ -193,7 +192,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
           cache: "npm"
 
       - name: Restore dependencies
@@ -245,7 +244,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
           cache: "npm"
 
       - name: Restore dependencies
@@ -271,7 +270,7 @@ jobs:
     runs-on: ubuntu-latest
     # 他のチェックが成功した場合のみ実行
     # なぜ依存？→ 基本的な品質チェックが通ってからインフラをチェックするため
-    needs: [setup, type-check, lint-and-format]
+    needs: [setup, type-check, lint-and-format, build]
 
     steps:
       - name: Checkout
@@ -280,7 +279,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "18"
+          node-version: "20"
           cache: "npm"
 
       - name: Restore dependencies
@@ -295,6 +294,9 @@ jobs:
         if: needs.setup.outputs.cache-hit != 'true'
         run: npm ci
 
+      - name: Build backend for CDK
+        run: npm run build --workspace=packages/backend
+
       # CDKの構文チェック（CloudFormationテンプレート生成）
       # なぜsynth？→ 実際にデプロイせずにテンプレートが正しく生成されるかチェック
       # セキュリティ対策：ダミーのアカウント情報を使用して実際の情報を隠蔽
@@ -305,6 +307,9 @@ jobs:
           # なぜダミー？→ パブリックリポジトリで実際のAWSアカウント情報を隠すため
           CDK_DEFAULT_ACCOUNT: "123456789012"
           CDK_DEFAULT_REGION: "us-east-1"
+          # ダミーのSwitchBot認証情報を設定（CDK　synthには実際の値は不要）
+          SWITCHBOT_TOKEN: "dummy-token"
+          SWITCHBOT_SECRET: "dummy-secret"
 
       # 生成されたCDKテンプレートを保存
       # なぜ保存？→ 問題があった時の調査、デプロイ内容の確認のため
