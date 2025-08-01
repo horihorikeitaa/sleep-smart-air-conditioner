@@ -17,15 +17,17 @@
 		"lint:fix": "biome lint --apply ./bin ./lib ./test",
 		"format": "biome format --write ./bin ./lib ./test",
 		"type-check": "tsc --noEmit",
-		"deploy:dev": "cross-env CDK_ENV=dev cdk deploy",
-		"deploy:prod": "cross-env CDK_ENV=prod cdk deploy",
-		"synth:dev": "cross-env CDK_ENV=dev cdk synth",
-		"synth:prod": "cross-env CDK_ENV=prod cdk synth"
+		"deploy:dev": "cross-env CDK_ENV=dev dotenv -c -- cdk deploy --require-approval never --all",
+		"deploy:prod": "cross-env CDK_ENV=prod dotenv -c -- cdk deploy --require-approval never --all",
+		"synth:dev": "cross-env CDK_ENV=dev dotenv -c -- cdk synth",
+		"synth:prod": "cross-env CDK_ENV=prod dotenv -c -- cdk synth"
 	},
 	"devDependencies": {
 		"@types/node": "22.7.9",
 		"aws-cdk": "2.1022.0",
 		"cross-env": "^10.0.0",
+		"dotenv": "^17.2.1",
+		"dotenv-cli": "^10.0.0",
 		"ts-node": "^10.9.2",
 		"tsx": "^4.20.3",
 		"typescript": "~5.6.3"
