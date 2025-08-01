@@ -159,10 +159,13 @@ export function getAuthConfig(): AuthConfig | null {
 	const secret = process.env.SWITCHBOT_SECRET;
 
 	if (!token || !secret) {
-		console.error("Missing SwitchBot credentials in environment variables", {
-			hasToken: !!token,
-			hasSecret: !!secret,
-		});
+		console.warn(
+			"SwitchBot credentials not configured - using Simple Webhook mode",
+			{
+				hasToken: !!token,
+				hasSecret: !!secret,
+			},
+		);
 		return null;
 	}
 
