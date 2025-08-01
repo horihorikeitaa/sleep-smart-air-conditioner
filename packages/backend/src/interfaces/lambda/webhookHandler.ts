@@ -46,10 +46,6 @@ export async function webhookHandler(
 
 		// 🔐 Step 1: SwitchBot Webhook認証
 		const authConfig = getAuthConfig();
-		if (!authConfig) {
-			console.error("SwitchBot authentication configuration is missing");
-			return createErrorResponse(500, "Authentication configuration error");
-		}
 
 		// ヘッダーの取得（大文字小文字を正規化）
 		const headers: WebhookHeaders = {
@@ -61,20 +57,44 @@ export async function webhookHandler(
 			nonce: (event.headers.nonce || event.headers.Nonce) ?? undefined,
 		};
 
-		// 署名検証
-		if (!verifyWebhookSignature(headers, authConfig)) {
-			console.warn("Webhook signature verification failed");
-			return createErrorResponse(401, "Unauthorized");
-		}
+		// 認証ヘッダーが存在する場合のみ署名検証を実行
+		const hasAuthHeaders =
+			headers.authorization && headers.sign && headers.t && headers.nonce;
 
-		// タイムスタンプ検証（リプレイ攻撃防止）
-		const timestamp = parseInt(headers.t || "0");
-		if (!validateTimestamp(timestamp)) {
-			console.warn("Webhook timestamp validation failed");
-			return createErrorResponse(401, "Request too old");
-		}
+		if (hasAuthHeaders) {
+			// Secure Webhook の場合は署名検証を実行
+			if (!authConfig) {
+				console.error("SwitchBot authentication configuration is missing");
+				return createErrorResponse(500, "Authentication configuration error");
+			}
 
-		console.log("✅ Webhook authentication successful");
+			if (!verifyWebhookSignature(headers, authConfig)) {
+				console.warn("Webhook signature verification failed");
+				return createErrorResponse(401, "Unauthorized");
+			}
+
+			// タイムスタンプ検証（リプレイ攻撃防止）
+			const timestamp = parseInt(headers.t || "0");
+			if (!validateTimestamp(timestamp)) {
+				console.warn("Webhook timestamp validation failed");
+				return createErrorResponse(401, "Request too old");
+			}
+
+			console.log("✅ Secure Webhook authentication successful");
+		} else {
+			// Simple Webhook の場合は警告ログのみ
+			console.log("⚠️ Simple Webhook detected (no authentication headers)");
+			console.log("📝 Consider using Secure Webhook for better security");
+
+			// IP許可リストでの簡易セキュリティチェック
+			const sourceIp = event.requestContext?.identity?.sourceIp;
+			if (sourceIp && !isAllowedSwitchBotIP(sourceIp)) {
+				console.warn(`Unauthorized IP address: ${sourceIp}`);
+				return createErrorResponse(403, "Forbidden - Invalid source IP");
+			}
+
+			console.log(`✅ Simple Webhook accepted from IP: ${sourceIp}`);
+		}
 
 		// リクエストボディの存在確認
 		if (!event.body) {
@@ -234,4 +254,19 @@ function createErrorResponse(
 			error: message,
 		}),
 	};
+}
+
+/**
+ * SwitchBotの許可されたIPアドレス範囲をチェック
+ * 簡易的なセキュリティ対策
+ */
+function isAllowedSwitchBotIP(sourceIp: string): boolean {
+	// SwitchBotのIPアドレス範囲
+	const allowedRanges = [
+		"54.64.81.21", // 現在観測されているSwitchBot IP
+		"54.64.", // AWS APNE1 の一部範囲
+		"52.68.", // AWS APNE1 の別の範囲
+	];
+
+	return allowedRanges.some((range) => sourceIp.startsWith(range));
 }
