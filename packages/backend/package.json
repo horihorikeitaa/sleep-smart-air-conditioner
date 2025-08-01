@@ -6,7 +6,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "tsx watch src/index.ts",
-		"build": "tsc --build",
+		"build": "tsc --build && cp package.json dist/",
 		"lint": "biome lint ./src",
 		"lint:fix": "biome lint --apply ./src",
 		"format": "biome format --write ./src",

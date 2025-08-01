@@ -2,19 +2,22 @@
 
 ## 📊 現在の進捗状況
 
-### ✅ 完了済み - Phase 0 基盤構築
+### ✅ 完了済み - Phase 0.5 データ永続化基盤完成
 
 #### 🏗️ インフラ構築
 
 - [x] DynamoDB CDK スタック作成・デプロイ
 - [x] GitHub Actions CI パイプライン設定
-- [x] AWS CDK による Lambda Stack・Webhook Stack 構築
+- [x] AWS CDK による 3 層アーキテクチャ構築（Data/Lambda/Webhook）
 - [x] API Gateway 統合と RESTful エンドポイント構築
+- [x] 依存関係の明確化とスタック分離
 
 #### 🔐 セキュリティ & 認証
 
 - [x] SwitchBot Webhook HMAC-SHA256 署名検証実装
 - [x] GitHub Environment Secrets による認証情報管理
+- [x] ローカル開発環境での .env ファイル対応
+- [x] 環境別認証情報管理（dev/prod フォールバック戦略）
 - [x] タイムスタンプ検証によるリプレイ攻撃防止
 - [x] パブリックリポジトリでの安全な開発環境構築
 
@@ -27,17 +30,53 @@
 
 #### 🏛️ アーキテクチャ実装
 
-- [x] **Step 1: Webhook 型定義作成** - SwitchBot Hub2/Plug Mini 型安全性
+- [x] **Step 1-4: データ永続化層完成** - DynamoDB Repository 実装
 - [x] **Step 2: EnvironmentDataFactory 実装** - ドメインモデル生成ロジック
 - [x] **Step 3: Webhook Handler の実装** - Lambda 関数と API Gateway 統合
+- [x] **Step 4: AWS 環境デプロイ完了** - 3 層アーキテクチャ本番構築
 - [x] **DDD 構造** - Domain/Application/Infrastructure 層分離
+- [x] **CDK 3 層アーキテクチャ** - Data/Lambda/Webhook スタック分離
 
-### 🔄 現在実装中
+### 🎯 次のフェーズ: Phase 1 実デバイス統合
 
-- [ ] **Phase 1: データ永続化と実デバイス統合** ← 👈 **次はここ**
-  - [ ] **Step 4: DynamoDB Repository 実装**
-  - [ ] **Step 5: 実デバイステスト** - SwitchBot Hub2/Plug Mini 連携
-  - [ ] **Step 6: エラーハンドリング強化**
+- [ ] **Phase 1: 実デバイス統合とデータ蓄積開始** ← 👈 **次はここ**
+  - [ ] **Step 5: SwitchBot 実デバイス設定** - Webhook URL 設定
+  - [ ] **Step 6: データ蓄積確認** - 実際の環境データ収集開始
+  - [ ] **Step 7: ダッシュボード構築** - データ可視化
+
+---
+
+## 🎊 Phase 0.5 完了実績
+
+### 📈 達成された価値
+
+- **✅ 完全な 3 層アーキテクチャ**: Data → Lambda → Webhook の依存関係明確化
+- **✅ 型安全なデータ処理**: TypeScript + DDD による保守性向上
+- **✅ 本番運用準備完了**: AWS デプロイ成功、監視基盤構築
+- **✅ データ蓄積基盤完成**: SwitchBot → DynamoDB パイプライン構築
+
+### 🚀 デプロイ済みリソース
+
+#### AWS CloudFormation スタック
+
+```
+✅ sleep-smart-ac-dev-data-stack      (DynamoDB テーブル)
+✅ sleep-smart-ac-dev-lambda-stack    (Lambda 関数 + IAM権限)
+✅ sleep-smart-ac-dev-webhook-stack   (API Gateway)
+```
+
+#### API エンドポイント
+
+```
+WebhookEndpoint: https://lhxc14v2c7.execute-api.ap-northeast-1.amazonaws.com/dev/webhook/switchbot
+```
+
+### 🔧 技術基盤
+
+- **バックエンド**: Node.js 20.x + TypeScript + DDD + TDD
+- **インフラ**: AWS CDK + Lambda + API Gateway + DynamoDB
+- **セキュリティ**: HMAC-SHA256 + 環境別認証情報管理
+- **CI/CD**: GitHub Actions + dotenv-cli + 段階的テスト戦略
 
 ---
 

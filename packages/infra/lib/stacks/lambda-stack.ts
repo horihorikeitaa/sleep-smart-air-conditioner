@@ -98,14 +98,18 @@ export class LambdaStack extends cdk.Stack {
 		this.webhookHandler = new lambda.Function(this, "WebhookHandler", {
 			runtime: lambda.Runtime.NODEJS_20_X,
 			handler: "interfaces/lambda/webhookHandler.webhookHandler",
-			code: lambda.Code.fromAsset("../backend/dist"), // ビルド後のTypeScriptコード
+			code: lambda.Code.fromAsset("../backend/dist"),
 			functionName: `${config.projectName}-webhook-handler`,
 			timeout: cdk.Duration.seconds(config.lambda.timeout),
 			memorySize: config.lambda.memorySize,
 
+			// ✅ ES Modules対応の追加設定
+			architecture: lambda.Architecture.X86_64,
+
 			// 🌍 Lambda関数の環境変数設定
 			environment: {
 				NODE_ENV: config.environment,
+				NODE_OPTIONS: "--enable-source-maps",
 				ENVIRONMENT_TABLE_NAME: environmentTable.tableName, // DynamoDBテーブル名
 				SWITCHBOT_TOKEN: getSwitchBotToken(config.environment), // SwitchBot認証トークン
 				SWITCHBOT_SECRET: getSwitchBotSecret(config.environment), // HMAC署名検証用シークレット

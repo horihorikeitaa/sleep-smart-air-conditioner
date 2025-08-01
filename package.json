@@ -11,14 +11,14 @@
     ],
     "scripts": {
         "lint": "biome lint ./packages",
-        "lint:fix": "biome lint --apply ./packages", 
+        "lint:fix": "biome lint --apply ./packages",
         "format:check": "biome check --files-ignore-unknown=true ./packages",
         "format:write": "biome format --write ./packages",
         "check": "biome check ./packages",
         "check:fix": "biome check --apply ./packages",
         "type-check": "npm run type-check --workspaces",
         "test": "jest",
-        "test:watch": "jest --watch", 
+        "test:watch": "jest --watch",
         "test:coverage": "jest --coverage",
         "test:backend": "jest --selectProjects backend",
         "test:infra": "jest --selectProjects infra",
@@ -28,18 +28,20 @@
         "dev:backend": "npm run dev --workspace=packages/backend",
         "deploy:infra": "npm run deploy --workspace=packages/infra",
         "deploy:dev": "npm run deploy:dev --workspace=packages/infra",
-        "deploy:prod": "npm run deploy:prod --workspace=packages/infra", 
+        "deploy:prod": "npm run deploy:prod --workspace=packages/infra",
         "synth:dev": "npm run synth:dev --workspace=packages/infra",
         "synth:prod": "npm run synth:prod --workspace=packages/infra",
         "cdk": "npm run cdk --workspace=packages/infra"
     },
     "devDependencies": {
-        "husky": "^8.0.3",
-        "lint-staged": "^15.2.0",
-        "typescript": "^5.3.0",
         "@types/jest": "^29.5.14",
+        "dotenv": "^17.2.1",
+        "dotenv-cli": "^10.0.0",
+        "husky": "^8.0.3",
         "jest": "^29.7.0",
-        "ts-jest": "^29.2.5"
+        "lint-staged": "^15.2.0",
+        "ts-jest": "^29.2.5",
+        "typescript": "^5.3.0"
     },
     "lint-staged": {
         "*.{js,ts,jsx,tsx}": [
